@@ -1,6 +1,10 @@
 # Project Kahn: Strategic Interaction Between Frontier AI Models
 
-This repository contains the simulation code and tournament data for "Strategic Interaction Between Frontier AI Models: A Computational Approach to Crisis Escalation".
+This repository contains Drift Johnsons Fork of Kenneth Paynes simulation code modified in trivial respects and new tournament data for "Strategic Interaction Between Frontier AI Models: A Computational Approach to Crisis Escalation".
+The results from the ZeroSystem simulation is here: [https://www.scuffedepoch.com/strategem-zero/](https://www.scuffedepoch.com/strategem-zero/)
+- Openrouter API support added (add key to .env in root method, adds almost 400 models for potential entrance to the tournament)
+- ZeroSystem "Against Blind Victory" agentic system prompt added for my experiment.
+- Special thanks to the Author for the open souce release !
 
 ## Paper
 
@@ -61,3 +65,4 @@ See [LICENSE](LICENSE) for details.
 ## Contact
 
 Kenneth Payne - [institution/email to be added]
+
