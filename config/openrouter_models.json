@@ -1,0 +1,285 @@
+{
+    "description": "OpenRouter models validated for Project Kahn tournament participation. All IDs verified against live OpenRouter API on 2026-03-02.",
+    "models": [
+        {
+            "id": "openrouter/anthropic/claude-opus-4.6",
+            "name": "Claude Opus 4.6",
+            "provider": "Anthropic",
+            "context_window": 1000000,
+            "notes": "Latest Anthropic flagship"
+        },
+        {
+            "id": "openrouter/anthropic/claude-sonnet-4.6",
+            "name": "Claude Sonnet 4.6",
+            "provider": "Anthropic",
+            "context_window": 1000000,
+            "notes": "Latest Anthropic mid-tier"
+        },
+        {
+            "id": "openrouter/anthropic/claude-sonnet-4.5",
+            "name": "Claude Sonnet 4.5",
+            "provider": "Anthropic",
+            "context_window": 1000000,
+            "notes": "Previous generation Sonnet"
+        },
+        {
+            "id": "openrouter/anthropic/claude-opus-4",
+            "name": "Claude Opus 4",
+            "provider": "Anthropic",
+            "context_window": 200000,
+            "notes": "Opus 4 generation"
+        },
+        {
+            "id": "openrouter/anthropic/claude-3.7-sonnet",
+            "name": "Claude 3.7 Sonnet",
+            "provider": "Anthropic",
+            "context_window": 200000,
+            "notes": "Claude 3 family"
+        },
+        {
+            "id": "openrouter/openai/gpt-5.2",
+            "name": "GPT-5.2",
+            "provider": "OpenAI",
+            "context_window": 400000,
+            "notes": "Latest OpenAI flagship"
+        },
+        {
+            "id": "openrouter/openai/gpt-5.2-pro",
+            "name": "GPT-5.2 Pro",
+            "provider": "OpenAI",
+            "context_window": 400000,
+            "notes": "GPT-5.2 Pro variant"
+        },
+        {
+            "id": "openrouter/openai/gpt-5",
+            "name": "GPT-5",
+            "provider": "OpenAI",
+            "context_window": 400000,
+            "notes": "GPT-5 base"
+        },
+        {
+            "id": "openrouter/openai/gpt-4.1",
+            "name": "GPT-4.1",
+            "provider": "OpenAI",
+            "context_window": 1047576,
+            "notes": "Previous generation flagship"
+        },
+        {
+            "id": "openrouter/openai/o3",
+            "name": "OpenAI o3",
+            "provider": "OpenAI",
+            "context_window": 200000,
+            "notes": "Reasoning model"
+        },
+        {
+            "id": "openrouter/openai/o3-pro",
+            "name": "OpenAI o3-pro",
+            "provider": "OpenAI",
+            "context_window": 200000,
+            "notes": "Reasoning model (pro)"
+        },
+        {
+            "id": "openrouter/openai/o4-mini",
+            "name": "OpenAI o4-mini",
+            "provider": "OpenAI",
+            "context_window": 200000,
+            "notes": "Latest reasoning model"
+        },
+        {
+            "id": "openrouter/google/gemini-3.1-pro-preview",
+            "name": "Gemini 3.1 Pro",
+            "provider": "Google",
+            "context_window": 1048576,
+            "notes": "Latest Gemini flagship"
+        },
+        {
+            "id": "openrouter/google/gemini-3-pro-preview",
+            "name": "Gemini 3 Pro",
+            "provider": "Google",
+            "context_window": 1048576,
+            "notes": "Gemini 3 generation"
+        },
+        {
+            "id": "openrouter/google/gemini-3-flash-preview",
+            "name": "Gemini 3 Flash",
+            "provider": "Google",
+            "context_window": 1048576,
+            "notes": "Gemini 3 fast variant"
+        },
+        {
+            "id": "openrouter/google/gemini-2.5-pro",
+            "name": "Gemini 2.5 Pro",
+            "provider": "Google",
+            "context_window": 1048576,
+            "notes": "Gemini 2.5 generation"
+        },
+        {
+            "id": "openrouter/x-ai/grok-4",
+            "name": "Grok 4",
+            "provider": "xAI",
+            "context_window": 256000,
+            "notes": "Latest xAI flagship"
+        },
+        {
+            "id": "openrouter/x-ai/grok-3",
+            "name": "Grok 3",
+            "provider": "xAI",
+            "context_window": 131072,
+            "notes": "Previous xAI flagship"
+        },
+        {
+            "id": "openrouter/meta-llama/llama-4-maverick",
+            "name": "Llama 4 Maverick",
+            "provider": "Meta",
+            "context_window": 1048576,
+            "notes": "Latest Meta flagship"
+        },
+        {
+            "id": "openrouter/meta-llama/llama-4-scout",
+            "name": "Llama 4 Scout",
+            "provider": "Meta",
+            "context_window": 327680,
+            "notes": "Llama 4 smaller variant"
+        },
+        {
+            "id": "openrouter/meta-llama/llama-3.3-70b-instruct",
+            "name": "Llama 3.3 70B",
+            "provider": "Meta",
+            "context_window": 131072,
+            "notes": "Strong open-weight model"
+        },
+        {
+            "id": "openrouter/meta-llama/llama-3.1-405b-instruct",
+            "name": "Llama 3.1 405B",
+            "provider": "Meta",
+            "context_window": 131000,
+            "notes": "Largest open-weight model"
+        },
+        {
+            "id": "openrouter/deepseek/deepseek-r1-0528",
+            "name": "DeepSeek R1 0528",
+            "provider": "DeepSeek",
+            "context_window": 163840,
+            "notes": "Latest reasoning model"
+        },
+        {
+            "id": "openrouter/deepseek/deepseek-r1",
+            "name": "DeepSeek R1",
+            "provider": "DeepSeek",
+            "context_window": 64000,
+            "notes": "Original reasoning model"
+        },
+        {
+            "id": "openrouter/deepseek/deepseek-v3.2",
+            "name": "DeepSeek V3.2",
+            "provider": "DeepSeek",
+            "context_window": 163840,
+            "notes": "Latest DeepSeek chat model"
+        },
+        {
+            "id": "openrouter/deepseek/deepseek-chat-v3.1",
+            "name": "DeepSeek Chat V3.1",
+            "provider": "DeepSeek",
+            "context_window": 32768,
+            "notes": "DeepSeek chat variant"
+        },
+        {
+            "id": "openrouter/mistralai/mistral-large-2512",
+            "name": "Mistral Large 2512",
+            "provider": "Mistral AI",
+            "context_window": 262144,
+            "notes": "Latest Mistral flagship"
+        },
+        {
+            "id": "openrouter/mistralai/mistral-medium-3.1",
+            "name": "Mistral Medium 3.1",
+            "provider": "Mistral AI",
+            "context_window": 131072,
+            "notes": "Mistral mid-tier"
+        },
+        {
+            "id": "openrouter/mistralai/mistral-large",
+            "name": "Mistral Large",
+            "provider": "Mistral AI",
+            "context_window": 128000,
+            "notes": "Mistral Large (alias)"
+        },
+        {
+            "id": "openrouter/qwen/qwen3-235b-a22b",
+            "name": "Qwen3 235B",
+            "provider": "Alibaba",
+            "context_window": 131072,
+            "notes": "Largest Qwen model"
+        },
+        {
+            "id": "openrouter/qwen/qwen3.5-397b-a17b",
+            "name": "Qwen3.5 397B",
+            "provider": "Alibaba",
+            "context_window": 262144,
+            "notes": "Latest Qwen flagship"
+        },
+        {
+            "id": "openrouter/qwen/qwen3-max",
+            "name": "Qwen3 Max",
+            "provider": "Alibaba",
+            "context_window": 262144,
+            "notes": "Qwen commercial flagship"
+        },
+        {
+            "id": "openrouter/qwen/qwq-32b",
+            "name": "QwQ 32B",
+            "provider": "Alibaba",
+            "context_window": 32768,
+            "notes": "Qwen reasoning model"
+        },
+        {
+            "id": "openrouter/cohere/command-a",
+            "name": "Command A",
+            "provider": "Cohere",
+            "context_window": 256000,
+            "notes": "Latest Cohere flagship"
+        },
+        {
+            "id": "openrouter/cohere/command-r-plus-08-2024",
+            "name": "Command R+ (08-2024)",
+            "provider": "Cohere",
+            "context_window": 128000,
+            "notes": "Enterprise-focused model"
+        },
+        {
+            "id": "openrouter/amazon/nova-premier-v1",
+            "name": "Amazon Nova Premier",
+            "provider": "Amazon",
+            "context_window": 1000000,
+            "notes": "AWS flagship model"
+        },
+        {
+            "id": "openrouter/amazon/nova-pro-v1",
+            "name": "Amazon Nova Pro",
+            "provider": "Amazon",
+            "context_window": 300000,
+            "notes": "AWS mid-tier model"
+        },
+        {
+            "id": "openrouter/nvidia/llama-3.3-nemotron-super-49b-v1.5",
+            "name": "Nemotron Super 49B",
+            "provider": "NVIDIA",
+            "context_window": 131072,
+            "notes": "NVIDIA fine-tuned Llama"
+        },
+        {
+            "id": "openrouter/ai21/jamba-large-1.7",
+            "name": "Jamba Large 1.7",
+            "provider": "AI21",
+            "context_window": 256000,
+            "notes": "Mamba-Transformer hybrid"
+        },
+        {
+            "id": "openrouter/allenai/olmo-3.1-32b-instruct",
+            "name": "OLMo 3.1 32B",
+            "provider": "Allen AI",
+            "context_window": 65536,
+            "notes": "Open research model"
+        }
+    ]
+}

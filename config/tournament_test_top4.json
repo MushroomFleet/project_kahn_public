@@ -1,0 +1,17 @@
+{
+    "tournament": "Project Kahn — ZeroSystem v3.0 Validation (Top 4 Test)",
+    "notes": "Short proof-of-concept tournament. 4 entrants, single scenario, 10 turns.",
+    "scenarios": ["v7_alliance"],
+    "settings": {
+        "game_version": "v11",
+        "mode": "round_robin",
+        "max_turns": 10,
+        "zerosystem": true
+    },
+    "entrants": [
+        "openrouter/anthropic/claude-sonnet-4.6",
+        "openrouter/openai/gpt-5.2",
+        "openrouter/google/gemini-3-flash-preview",
+        "openrouter/x-ai/grok-4"
+    ]
+}

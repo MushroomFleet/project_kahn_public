@@ -48,6 +48,7 @@ load_dotenv(os.path.join(BASE_DIR, '..', '..', 'Schelling.env'))  # Fallback to 
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY') or os.getenv('GEMINI_API_KEY')
+OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
 
 if openai and OPENAI_API_KEY:
     import httpx
@@ -61,6 +62,20 @@ else:
     anthropic_client = None
 if genai and GOOGLE_API_KEY:
     genai.configure(api_key=GOOGLE_API_KEY)
+if openai and OPENROUTER_API_KEY:
+    import httpx as _httpx_or
+    openrouter_http_client = _httpx_or.Client()
+    openrouter_client = openai.OpenAI(
+        api_key=OPENROUTER_API_KEY,
+        base_url="https://openrouter.ai/api/v1",
+        http_client=openrouter_http_client,
+        default_headers={
+            "HTTP-Referer": "https://github.com/project-kahn",
+            "X-Title": "Project Kahn Tournament"
+        }
+    )
+else:
+    openrouter_client = None
 
 def parse_json_response(text: str) -> Dict[str, Any]:
     """Robust JSON parsing with fallback - copied from v5"""
@@ -306,8 +321,12 @@ def update_territory_and_military(curr_territory: float, a_action: float, b_acti
     
     return new_territory, new_a_military, new_b_military
 
-def get_llm_response(model: str, prompt: str, temperature: float = 0.7, max_tokens: int = 3000, retries: int = 3) -> str:
-    """Get response from LLM - compatible with api_clients interface"""
+def get_llm_response(model: str, prompt: str, temperature: float = 0.7, max_tokens: int = 3000, retries: int = 3, zerosystem_preamble: str = "") -> str:
+    """Get response from LLM - compatible with api_clients interface.
+
+    If zerosystem_preamble is provided, it is injected as a system-level message
+    (or prepended to user content for providers that lack a system role).
+    """
     last_err = None
     for _ in range(retries):
         try:
@@ -318,37 +337,85 @@ def get_llm_response(model: str, prompt: str, temperature: float = 0.7, max_toke
                 # GPT-5.x, o1, o3 models use max_completion_tokens instead of max_tokens
                 is_new_model = 'gpt-5' in m or m.startswith('o1') or m.startswith('o3')
                 token_param = 'max_completion_tokens' if is_new_model else 'max_tokens'
-                
+
+                messages = []
+                if zerosystem_preamble:
+                    messages.append({"role": "system", "content": zerosystem_preamble})
+                messages.append({"role": "user", "content": prompt})
+
                 kwargs = {
                     'model': (model or 'gpt-4o-2024-08-06'),
-                    'messages': [{"role": "user", "content": prompt}],
+                    'messages': messages,
                     token_param: max_tokens,
                 }
                 # New reasoning models don't support temperature
                 if not (m.startswith('o1') or m.startswith('o3')):
                     kwargs['temperature'] = temperature
-                    
+
                 resp = openai_client.chat.completions.create(**kwargs)
                 return resp.choices[0].message.content
             elif m.startswith('claude') and anthropic_client:
-                resp = anthropic_client.messages.create(
-                    model=model,
-                    max_tokens=max_tokens,
-                    temperature=temperature,
-                    messages=[{"role": "user", "content": prompt}],
-                )
+                kwargs = {
+                    'model': model,
+                    'max_tokens': max_tokens,
+                    'temperature': temperature,
+                    'messages': [{"role": "user", "content": prompt}],
+                }
+                if zerosystem_preamble:
+                    kwargs['system'] = zerosystem_preamble
+                resp = anthropic_client.messages.create(**kwargs)
                 return "".join(block.text for block in resp.content)
             elif m.startswith('gemini') and genai:
                 gmodel = genai.GenerativeModel(model)
+                effective_prompt = prompt
+                if zerosystem_preamble:
+                    effective_prompt = f"--- ZEROSYSTEM v3.0 FRAMEWORK ---\n{zerosystem_preamble}\n--- END ZEROSYSTEM FRAMEWORK ---\n\n{prompt}"
                 resp = gmodel.generate_content([
-                    {"text": prompt},
+                    {"text": effective_prompt},
                 ], generation_config={"temperature": temperature, "max_output_tokens": max_tokens})
                 return resp.text
+            elif m.startswith('openrouter/'):
+                if not openrouter_client:
+                    raise RuntimeError("OpenRouter client not configured — set OPENROUTER_API_KEY")
+                actual_model = model[len('openrouter/'):]
+
+                messages = []
+                if zerosystem_preamble:
+                    messages.append({"role": "system", "content": zerosystem_preamble})
+                messages.append({"role": "user", "content": prompt})
+
+                kwargs = {
+                    'model': actual_model,
+                    'messages': messages,
+                    'max_tokens': max_tokens,
+                    'temperature': temperature,
+                }
+                resp = openrouter_client.chat.completions.create(**kwargs)
+                content = resp.choices[0].message.content
+                if content is None:
+                    raise RuntimeError(f"OpenRouter returned empty content for {actual_model}")
+                return content
             raise RuntimeError("No supported provider for model: " + model)
         except Exception as e:
             last_err = e
             time.sleep(1)
     raise RuntimeError(f"Model call failed after retries: {last_err}")
+
+def sanitize_model_name(model: str) -> str:
+    """Sanitize model name for use in filenames (handles OpenRouter slash-delimited names)"""
+    return model.replace('/', '_').replace('\\', '_')
+
+def load_zerosystem_prompt() -> str:
+    """Load ZEROsystemV3.md and return its content for use as a system preamble"""
+    candidates = [
+        os.path.join(BASE_DIR, '..', 'ZEROsystemV3.md'),
+        os.path.join(BASE_DIR, 'ZEROsystemV3.md'),
+    ]
+    for path in candidates:
+        if os.path.exists(path):
+            with open(path, 'r', encoding='utf-8') as f:
+                return f.read()
+    return ""
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -1451,10 +1518,11 @@ Respond ONLY with JSON:
 # MAIN GAME LOGIC
 # -----------------------------
 
-def run_single_turn(history: List[Dict[str, Any]], turn: int, 
-                   state_a_model: str, state_b_model: str, aggressor_side: str, scenario_key: str = 'v7_alliance', territory_balance: float = 0.0, 
+def run_single_turn(history: List[Dict[str, Any]], turn: int,
+                   state_a_model: str, state_b_model: str, aggressor_side: str, scenario_key: str = 'v7_alliance', territory_balance: float = 0.0,
                    a_military_power: Dict[str, float] = None, b_military_power: Dict[str, float] = None,
-                   state_a_profiles: Dict[str, Any] = None, state_b_profiles: Dict[str, Any] = None) -> Dict[str, Any]:
+                   state_a_profiles: Dict[str, Any] = None, state_b_profiles: Dict[str, Any] = None,
+                   zerosystem_preamble: str = "") -> Dict[str, Any]:
     """
     v10: Run a single turn with three-phase decision architecture:
     Phase 1 (Reflection): Assess opponent credibility and meta-cognition
@@ -1543,11 +1611,11 @@ def run_single_turn(history: List[Dict[str, Any]], turn: int,
     # v11.1: Global max_tokens increased to 3000 to prevent Gemini truncation
     try:
         reflA_prompt = generate_reflection_prompt("State Alpha", role_a, oppA_reputation, turn, scenario_key, territory_balance, a_military_power, b_military_power, state_a_profiles)
-        reflA_response = get_llm_response(state_a_model, reflA_prompt)
+        reflA_response = get_llm_response(state_a_model, reflA_prompt, zerosystem_preamble=zerosystem_preamble)
         reflA = parse_json_response(reflA_response)
-        
+
         reflB_prompt = generate_reflection_prompt("State Beta", role_b, oppB_reputation, turn, scenario_key, territory_balance, b_military_power, a_military_power, state_b_profiles)
-        reflB_response = get_llm_response(state_b_model, reflB_prompt)
+        reflB_response = get_llm_response(state_b_model, reflB_prompt, zerosystem_preamble=zerosystem_preamble)
         reflB = parse_json_response(reflB_response)
         
     except Exception as e:
@@ -1557,11 +1625,11 @@ def run_single_turn(history: List[Dict[str, Any]], turn: int,
     # v10: PHASE 2 - FORECAST (predict opponent's next move using reflection)
     try:
         foreA_prompt = generate_forecast_prompt("State Alpha", role_a, json.dumps(reflA, indent=2), oppA_reputation, turn, scenario_key, territory_balance, a_military_power, b_military_power, state_a_profiles)
-        foreA_response = get_llm_response(state_a_model, foreA_prompt)
+        foreA_response = get_llm_response(state_a_model, foreA_prompt, zerosystem_preamble=zerosystem_preamble)
         foreA = parse_json_response(foreA_response)
-        
+
         foreB_prompt = generate_forecast_prompt("State Beta", role_b, json.dumps(reflB, indent=2), oppB_reputation, turn, scenario_key, territory_balance, b_military_power, a_military_power, state_b_profiles)
-        foreB_response = get_llm_response(state_b_model, foreB_prompt)
+        foreB_response = get_llm_response(state_b_model, foreB_prompt, zerosystem_preamble=zerosystem_preamble)
         foreB = parse_json_response(foreB_response)
         
     except Exception as e:
@@ -1571,11 +1639,11 @@ def run_single_turn(history: List[Dict[str, Any]], turn: int,
     # v10: PHASE 3a - SIGNAL (choose signals with full context)
     try:
         sigA_prompt = generate_signal_prompt("State Alpha", role_a, ladder, json.dumps(reflA, indent=2), json.dumps(foreA, indent=2), oppA_reputation, turn, scenario_key, territory_balance, a_military_power, b_military_power, state_a_profiles)
-        sigA_response = get_llm_response(state_a_model, sigA_prompt)
+        sigA_response = get_llm_response(state_a_model, sigA_prompt, zerosystem_preamble=zerosystem_preamble)
         sigA = parse_json_response(sigA_response)
-        
+
         sigB_prompt = generate_signal_prompt("State Beta", role_b, ladder, json.dumps(reflB, indent=2), json.dumps(foreB, indent=2), oppB_reputation, turn, scenario_key, territory_balance, b_military_power, a_military_power, state_b_profiles)
-        sigB_response = get_llm_response(state_b_model, sigB_prompt)
+        sigB_response = get_llm_response(state_b_model, sigB_prompt, zerosystem_preamble=zerosystem_preamble)
         sigB = parse_json_response(sigB_response)
         
     except Exception as e:
@@ -1642,11 +1710,11 @@ def run_single_turn(history: List[Dict[str, Any]], turn: int,
     # v10: PHASE 3b - ACTION (choose action with full context and consistency statement)
     try:
         actA_prompt = generate_action_prompt("State Alpha", role_a, ladder, json.dumps(reflA, indent=2), json.dumps(foreA, indent=2), oppA_reputation, turn, scenario_key, territory_balance, a_military_power, b_military_power, state_a_profiles)
-        actA_response = get_llm_response(state_a_model, actA_prompt)
+        actA_response = get_llm_response(state_a_model, actA_prompt, zerosystem_preamble=zerosystem_preamble)
         a_act_obj = parse_json_response(actA_response)
-        
+
         actB_prompt = generate_action_prompt("State Beta", role_b, ladder, json.dumps(reflB, indent=2), json.dumps(foreB, indent=2), oppB_reputation, turn, scenario_key, territory_balance, b_military_power, a_military_power, state_b_profiles)
-        actB_response = get_llm_response(state_b_model, actB_prompt)
+        actB_response = get_llm_response(state_b_model, actB_prompt, zerosystem_preamble=zerosystem_preamble)
         b_act_obj = parse_json_response(actB_response)
         
     except Exception as e:
@@ -1844,11 +1912,15 @@ def run_single_turn(history: List[Dict[str, Any]], turn: int,
         'shown_to_A_opp_conditional_credibility': oppA_cond,
         'shown_to_B_opp_immediate_honesty': oppB_imm,
         'shown_to_B_opp_conditional_credibility': oppB_cond,
+
+        # Experimental condition tracking
+        'zerosystem_active': bool(zerosystem_preamble),
     }
 
-def run_kahn_game_v11(state_a_model: str, state_b_model: str, 
+def run_kahn_game_v11(state_a_model: str, state_b_model: str,
                     aggressor_side: str = 'A', max_turns: int = 50, scenario_key: str = 'v7_alliance',
-                    start_balance: float = 0.0, results_dir: str = None) -> str:
+                    start_balance: float = 0.0, results_dir: str = None,
+                    zerosystem: bool = False) -> str:
     """
     v11: Run a complete Kahn Game with three-phase decision architecture + memory systems.
     Phase 1 (Reflection): Assess opponent credibility and meta-cognition
@@ -1856,7 +1928,16 @@ def run_kahn_game_v11(state_a_model: str, state_b_model: str,
     Phase 3 (Decision): Choose signals and action with full context, including consistency statement
     All v9 features retained (military capabilities, gating, etc.)
     """
-    
+
+    # Load ZeroSystem preamble if enabled
+    zerosystem_preamble = ""
+    if zerosystem:
+        zerosystem_preamble = load_zerosystem_prompt()
+        if zerosystem_preamble:
+            logger.info(f"ZeroSystem v3.0 ENABLED ({len(zerosystem_preamble)} chars)")
+        else:
+            logger.warning("--zerosystem flag set but ZEROsystemV3.md not found — running without ZeroSystem")
+
     logger.info(f"Starting Kahn Game v11: {state_a_model} vs {state_b_model} (aggressor: {aggressor_side})")
     
     # Load state profiles
@@ -1891,8 +1972,9 @@ def run_kahn_game_v11(state_a_model: str, state_b_model: str,
             break
         
         try:
-            turn_data = run_single_turn(history, turn, state_a_model, state_b_model, aggressor_side, scenario_key, 
-                                       territory_balance, a_military_power, b_military_power, state_a_profiles, state_b_profiles)
+            turn_data = run_single_turn(history, turn, state_a_model, state_b_model, aggressor_side, scenario_key,
+                                       territory_balance, a_military_power, b_military_power, state_a_profiles, state_b_profiles,
+                                       zerosystem_preamble=zerosystem_preamble)
             history.append(turn_data)
             
             # Update territory balance and military power from turn results
@@ -1910,11 +1992,13 @@ def run_kahn_game_v11(state_a_model: str, state_b_model: str,
     
     # Generate filename and save results
     timestamp = datetime.now().strftime('%Y-%m-%d_%H%M%S')
-    filename = f"kahn_game_v11_{state_a_model}_vs_{state_b_model}_agg_{aggressor_side}_{timestamp}_{scenario_key}_bal_{start_balance}.csv"
+    safe_a = sanitize_model_name(state_a_model)
+    safe_b = sanitize_model_name(state_b_model)
+    filename = f"kahn_game_v11_{safe_a}_vs_{safe_b}_agg_{aggressor_side}_{timestamp}_{scenario_key}_bal_{start_balance}.csv"
     
     # Save to specified results directory, or default to 'Kahn results'
     if results_dir is None:
-    results_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Kahn results')
+        results_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Kahn results')
     os.makedirs(results_dir, exist_ok=True)
     filepath = os.path.join(results_dir, filename)
     
@@ -1937,9 +2021,11 @@ def main():
                        choices=['v6_baseline', 'v7_alliance', 'v7_resource', 'v7_strait', 'v7_power_transition', 'v7_power_transition_a_rising', 'v7_power_transition_b_rising', 'v7_land_grab', 'v8_first_strike_fear', 'v9_regime_survival', 'v10_standoff_crisis'],
                        help='Scenario to use (default: v7_alliance for higher stakes)')
     parser.add_argument('--start_balance', type=float, default=0.0, help='Initial territory balance (-5.0 to +5.0)')
-    
+    parser.add_argument('--zerosystem', action='store_true', default=False, help='Enable ZEROsystem v3.0 consequence-aware reasoning for all entrants')
+    parser.add_argument('--results_dir', type=str, default=None, help='Directory for result CSV files')
+
     args = parser.parse_args()
-    
+
     try:
         result_file = run_kahn_game_v11(
             state_a_model=args.model_a,
@@ -1947,7 +2033,9 @@ def main():
             aggressor_side=args.aggressor,
             max_turns=args.turns,
             scenario_key=args.scenario,
-            start_balance=args.start_balance
+            start_balance=args.start_balance,
+            results_dir=args.results_dir,
+            zerosystem=args.zerosystem
         )
         print(f"Game completed successfully. Results: {result_file}")
         
