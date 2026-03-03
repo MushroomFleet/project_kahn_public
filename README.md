@@ -10,7 +10,7 @@ The results from the ZeroSystem simulation is here: [https://www.scuffedepoch.co
 
 **AI Arms and Influence: Frontier Models Exhibit Sophisticated Reasoning in Simulated Nuclear Crises**
 
-The paper is available on arXiv: [link to be added]
+The paper is available on arXiv: [[https://arxiv.org/abs/2602.14740v1](https://arxiv.org/abs/2602.14740v1)]
 
 ## Repository Contents
 
@@ -65,4 +65,5 @@ See [LICENSE](LICENSE) for details.
 ## Contact
 
 Kenneth Payne - [institution/email to be added]
+
 
